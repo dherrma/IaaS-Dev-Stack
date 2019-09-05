@@ -843,22 +843,17 @@
                         "Ref": "DataSubnet0"
                     },
                     {
-                        "Fn::If": [
-                            "NumberOfAZs2",
-                            {
-                                "Fn::Join": [
-                                    ",",
-                                    [
-                                        {
-                                            "Ref": "DataSubnet0"
-                                        },
-                                        {
-                                            "Ref": "DataSubnet1"
-                                        }
-                                    ]
-                                ]
-                            }
-                        ]
+                        "Fn::Join": [
+                            ",",
+                            [
+                                {
+                                    "Ref": "DataSubnet0"
+                                },
+                                {
+                                    "Ref": "DataSubnet1"
+                                }
+                            ]
+                        ] 
                     }
                 ]
             }
@@ -871,21 +866,16 @@
                         "Ref": "WebSubnet0"
                     },
                     {
-                        "Fn::If": [
-                            "NumberOfAZs2",
-                            {
-                                "Fn::Join": [
-                                    ",",
-                                    [
-                                        {
-                                            "Ref": "WebSubnet0"
-                                        },
-                                        {
-                                            "Ref": "WebSubnet1"
-                                        }
-                                    ]
-                                ]
-                            }
+                        "Fn::Join": [
+                            ",",
+                            [
+                                {
+                                    "Ref": "WebSubnet0"
+                                },
+                                {
+                                    "Ref": "WebSubnet1"
+                                }
+                            ]
                         ]
                     }
                 ]
@@ -899,21 +889,16 @@
                         "Ref": "PublicSubnet0"
                     },
                     {
-                        "Fn::If": [
-                            "NumberOfAZs2",
-                            {
-                                "Fn::Join": [
-                                    ",",
-                                    [
-                                        {
-                                            "Ref": "PublicSubnet0"
-                                        },
-                                        {
-                                            "Ref": "PublicSubnet1"
-                                        }
-                                    ]
-                                ]
-                            }
+                        "Fn::Join": [
+                            ",",
+                            [
+                                {
+                                    "Ref": "PublicSubnet0"
+                                },
+                                {
+                                    "Ref": "PublicSubnet1"
+                                }
+                            ]
                         ]
                     }
                 ]
