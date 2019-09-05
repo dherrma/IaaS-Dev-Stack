@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Stack to deploy a highly available, elastic, scalable WordPress environment. This master stack launches multiple nested stacks for different tiers. !! This can only be run in certain AWS Regions - 'us-east-1', 'us-east-2', 'us-west-2', 'eu-west-1'.",
+    "Description": "Stack to deploy a highly available, elastic, scalable environment. This master stack launches multiple nested stacks for different tiers. !! This can only be run in certain AWS Regions - 'us-east-1', 'us-east-2', 'us-west-2', 'eu-west-1'.",
     "Metadata": {
         "Authors": {
             "Description": "Darryl Osborne (darrylo@amazon.com)"
@@ -43,6 +43,8 @@
                     },
                     "Parameters": [
                         "DatabaseInstanceType",
+                        "DatabaseEncrpytedBoolean",
+                        "DatabaseCmk",
                         "DatabaseMasterUsername",
                         "DatabaseMasterPassword",
                         "DatabaseName",
@@ -63,15 +65,22 @@
                         "default": "Web Tier"
                     },
                     "Parameters": [
+                        "PublicAlbAcmCertificate",
                         "WebInstanceType",
                         "WebAsgMax",
                         "WebAsgMin"
                     ]
-                },
+                }
             ],
             "ParameterLabels": {
                 "BastionInstanceType": {
                     "default": "Bastion Instance Type"
+                },
+                "DatabaseCmk": {
+                    "default": "AWS KMS CMK for RDS"
+                },
+                "DatabaseEncrpytedBoolean": {
+                    "default": "Encrypted DB Cluster"
                 },
                 "DatabaseInstanceType": {
                     "default": "DB Instance Class"
@@ -90,6 +99,9 @@
                 },
                 "EC2KeyName": {
                     "default": "EC2 Key Pair"
+                },
+                "PublicAlbAcmCertificate": {
+                    "default": "ALB Certificate ARN"
                 },
                 "SshAccessCidr": {
                     "default": "SSH Access From"
@@ -240,6 +252,19 @@
             "Description": "Bastion EC2 instance type.",
             "Type": "String"
         },
+        "DatabaseCmk": {
+            "Description": "AWS KMS Customer Master Key (CMK) to encrypt database cluster",
+            "Type": "String"
+        },
+        "DatabaseEncrpytedBoolean": {
+            "AllowedValues": [
+                true,
+                false
+            ],
+            "Default": true,
+            "Description": "Indicates whether the DB instances in the cluster are encrypted.",
+            "Type": "String"
+        },
         "DatabaseInstanceType": {
             "AllowedValues": [
                 "db.t2.small",
@@ -319,13 +344,18 @@
             "Type": "String",
             "Default": "0.0.0.0/0"
         },
+        "PublicAlbAcmCertificate": {
+            "AllowedPattern": "^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$",
+            "Description": "[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the domain name for the website you use.",
+            "Type": "String"
+        },
         "UseElastiCacheBoolean": {
             "AllowedValues": [
                 true,
                 false
             ],
             "Default": true,
-            "Description": "Specifies whether an ElastiCache Cache Cluster should be created to cache WordPress database content.",
+            "Description": "Specifies whether an ElastiCache Cache Cluster should be created to cache website database content.",
             "Type": "String"
         },
         "WebAsgMax": {
@@ -441,7 +471,7 @@
         },
         "AdminEmail": {
             "AllowedPattern": "^(([^<>()\\[\\]\\\\.,;:\\s@\"]+(\\.[^<>()\\[\\]\\\\.,;:\\s@\"]+)*)|(\".+\"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$",
-            "Description": "The admin email address for WordPress and AWS notifications.",
+            "Description": "The admin email address AWS notifications.",
             "Type": "String"
         },
         "AvailabilityZones": {
@@ -617,7 +647,7 @@
                         ]
                     }
                 },
-                "TemplateURL": "https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-bastion.yaml"
+                "TemplateURL": "https://cf-templates-dhe.s3-eu-west-1.amazonaws.com/custom-ref-web-db/custom-ref-web-db-03-bastion.json"
             }
         },
         "elasticache": {
@@ -648,7 +678,7 @@
                         "Ref": "NumberOfAZs"
                     }
                 },
-                "TemplateURL": "https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-elasticache.yaml"
+                "TemplateURL": "https://cf-templates-dhe.s3-eu-west-1.amazonaws.com/custom-ref-web-db/custom-ref-web-db-03-elasticache.json"
             }
         },
         "newvpc": {
@@ -691,7 +721,7 @@
                         "Ref": "DataSubnet1Cidr"
                     }
                 },
-                "TemplateURL": "https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-01-newvpc.yaml"
+                "TemplateURL": "https://cf-templates-dhe.s3-eu-west-1.amazonaws.com/custom-ref-web-db/custom-ref-web-db-01-newvpc.json"
             }
         },
         "publicalb": {
@@ -712,6 +742,9 @@
                             "Outputs.PublicSubnet"
                         ]
                     },
+                    "PublicAlbAcmCertificate": {
+                        "Ref": "PublicAlbAcmCertificate"
+                    },
                     "PublicAlbSecurityGroup": {
                         "Fn::GetAtt": [
                             "securitygroups",
@@ -725,7 +758,7 @@
                         ]
                     }
                 },
-                "TemplateURL": "https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-publicalb.yaml"
+                "TemplateURL": "https://cf-templates-dhe.s3-eu-west-1.amazonaws.com/custom-ref-web-db/custom-ref-web-db-03-publicalb.json"
             }
         },
         "rds": {
@@ -749,6 +782,12 @@
                     "DatabaseName": {
                         "Ref": "DatabaseName"
                     },
+                    "DatabaseEncrpytedBoolean": {
+                        "Ref": "DatabaseEncrpytedBoolean"
+                    },
+                    "DatabaseCmk": {
+                        "Ref": "DatabaseCmk"
+                    },
                     "DatabaseSecurityGroup": {
                         "Fn::GetAtt": [
                             "securitygroups",
@@ -765,7 +804,7 @@
                         "Ref": "NumberOfAZs"
                     }
                 },
-                "TemplateURL": "https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-rds.yaml"
+                "TemplateURL": "https://cf-templates-dhe.s3-eu-west-1.amazonaws.com/custom-ref-web-db/custom-ref-web-db-03-rds.json"
             }
         },
         "securitygroups": {
@@ -784,7 +823,7 @@
                         ]
                     }
                 },
-                "TemplateURL": "https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-02-securitygroups.yaml"
+                "TemplateURL": "https://cf-templates-dhe.s3-eu-west-1.amazonaws.com/custom-ref-web-db/custom-ref-web-db-02-securitygroups.json"
             }
         },
         "web": {
@@ -830,6 +869,12 @@
                             "Outputs.PublicAlbHostname"
                         ]
                     },
+                    "SslCertificate": {
+                        "Fn::GetAtt": [
+                            "publicalb",
+                            "Outputs.SslCertificate"
+                        ]
+                    },
                     "WebAsgMax": {
                         "Ref": "WebAsgMax"
                     },
@@ -852,7 +897,7 @@
                         ]
                     }
                 },
-                "TemplateURL": "https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-04-web.yaml"
+                "TemplateURL": "https://cf-templates-dhe.s3-eu-west-1.amazonaws.com/custom-ref-web-db/custom-ref-web-db-04-web.json"
             }
         }
     },
@@ -876,6 +921,15 @@
                     "!!ERROR!!! - Nothing to do! - unavailable AWS Region. You must create this stack in an available AWS Region: 'us-east-1', 'us-east-2', 'us-west-2', 'eu-west-1', 'ap-southeast-2'."
                 ]
             }
-        }
+        },
+        "WebserverUrl": {
+            "Description": "The URL of the Webserver site",
+            "Value": {
+                "Fn::GetAtt": [
+                    "publicalb",
+                    "Outputs.PublicAlbHostname"
+                ]
+            }
+        }   
     }
 }
