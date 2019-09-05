@@ -455,29 +455,24 @@
                                 ]
                             }
                         ],
-                        {
-                            "Fn::If": [
-                                "NumberOfSubnets2",
-                                [
+                        [
+                            {
+                                "Fn::Select": [
+                                    0,
                                     {
-                                        "Fn::Select": [
-                                            0,
-                                            {
-                                                "Ref": "Subnet"
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        "Fn::Select": [
-                                            1,
-                                            {
-                                                "Ref": "Subnet"
-                                            }
-                                        ]
+                                        "Ref": "Subnet"
                                     }
                                 ]
-                            ]
-                        }
+                            },
+                            {
+                                "Fn::Select": [
+                                    1,
+                                    {
+                                        "Ref": "Subnet"
+                                    }
+                                ]
+                            }
+                        ]
                     ]
                 }
             },
