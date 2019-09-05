@@ -43,9 +43,6 @@
                 "DatabaseMasterPassword": {
                     "default": "DB Master Password"
                 },
-                "DatabaseRestoreSnapshot": {
-                    "default": "Snapshot to restore from"
-                },
                 "DatabaseName": {
                     "default": "DB Name"
                 },
@@ -118,10 +115,6 @@
             "Description": "The Amazon RDS master database name.",
             "Type": "String"
         },
-        "DatabaseRestoreSnapshot": {
-            "Description": "The snapshot name to restore from.",
-            "Type": "String"
-        },
         "DatabaseSecurityGroup": {
             "Description": "Select the database security group.",
             "Type": "AWS::EC2::SecurityGroup::Id"
@@ -177,14 +170,6 @@
                     "Ref": "DatabaseCmk"
                 }
             ]
-        },
-        "NoSnapshot": {
-            "Fn::Equals": [
-                "",
-                {
-                    "Ref": "DatabaseRestoreSnapshot"
-                }
-            ]
         }
     },
     "Resources": {
@@ -211,41 +196,14 @@
                     ]
                 },
                 "MasterUsername": {
-                    "Fn::If": [
-                        "NoSnapshot",
-                        {
-                            "Ref": "DatabaseMasterUsername"
-                        },
-                        {
-                            "Ref": "AWS::NoValue"
-                        }
-                    ]
+                    "Ref": "DatabaseMasterUsername"
                 },
                 "MasterUserPassword": {
-                    "Fn::If": [
-                        "NoSnapshot",
-                        {
-                            "Ref": "DatabaseMasterPassword"
-                        },
-                        {
-                            "Ref": "AWS::NoValue"
-                        }
-                    ]
+                    "Ref": "DatabaseMasterPassword"
                 },
                 "Port": 3306,
                 "StorageEncrypted": {
                     "Ref": "DatabaseEncrpytedBoolean"
-                },
-                "SnapshotIdentifier": {
-                    "Fn::If": [
-                        "NoSnapshot",
-                        {
-                            "Ref": "AWS::NoValue"
-                        },
-                        {
-                            "Ref": "DatabaseRestoreSnapshot"
-                        }
-                    ]
                 },
                 "Tags": [
                     {
