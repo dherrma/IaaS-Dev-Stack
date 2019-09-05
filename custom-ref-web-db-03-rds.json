@@ -168,11 +168,7 @@
             ]
         },
         "Subnet1": {
-            "Fn::Or": [
-                {
-                    "Condition": "NumberOfSubnets2"
-                }
-            ]
+            "Condition": "NumberOfSubnets2"
         },
         "UseAWS-ManagedCMK": {
             "Fn::Equals": [
