@@ -32,24 +32,7 @@
                         "PublicSubnet0Cidr",
                         "PublicSubnet1Cidr",
                         "WebSubnet0Cidr",
-                        "WebSubnet1Cidr",
-                        "DataSubnet0Cidr",
-                        "DataSubnet1Cidr"
-                    ]
-                },
-                {
-                    "Label": {
-                        "default": "Database Tier"
-                    },
-                    "Parameters": [
-                        "DatabaseInstanceType",
-                        "DatabaseEncrpytedBoolean",
-                        "DatabaseCmk",
-                        "DatabaseMasterUsername",
-                        "DatabaseMasterPassword",
-                        "DatabaseName",
-                        "UseElastiCacheBoolean",
-                        "ElastiCacheNodeType"
+                        "WebSubnet1Cidr"
                     ]
                 },
                 {
@@ -76,27 +59,6 @@
                 "BastionInstanceType": {
                     "default": "Bastion Instance Type"
                 },
-                "DatabaseCmk": {
-                    "default": "AWS KMS CMK for RDS"
-                },
-                "DatabaseEncrpytedBoolean": {
-                    "default": "Encrypted DB Cluster"
-                },
-                "DatabaseInstanceType": {
-                    "default": "DB Instance Class"
-                },
-                "DatabaseMasterUsername": {
-                    "default": "DB Master Username"
-                },
-                "DatabaseMasterPassword": {
-                    "default": "DB Master Password"
-                },
-                "DatabaseName": {
-                    "default": "DB Name"
-                },
-                "ElastiCacheNodeType": {
-                    "default": "Cache Cluster Node Type"
-                },
                 "EC2KeyName": {
                     "default": "EC2 Key Pair"
                 },
@@ -105,9 +67,6 @@
                 },
                 "SshAccessCidr": {
                     "default": "SSH Access From"
-                },
-                "UseElastiCacheBoolean": {
-                    "default": "Cache Cluster (ElastiCache)"
                 },
                 "WebAsgMax": {
                     "default": "Web ASG Max"
@@ -140,16 +99,10 @@
                     "default": "Public Subnet 1"
                 },
                 "WebSubnet0Cidr": {
-                    "default": "Web Subnet 0"
+                    "default": "App Subnet 0"
                 },
                 "WebSubnet1Cidr": {
-                    "default": "Web Subnet 1"
-                },
-                "DataSubnet0Cidr": {
-                    "default": "Data Subnet 0"
-                },
-                "DataSubnet1Cidr": {
-                    "default": "Data Subnet 1"
+                    "default": "App Subnet 1"
                 }
             }
         }
@@ -252,87 +205,6 @@
             "Description": "Bastion EC2 instance type.",
             "Type": "String"
         },
-        "DatabaseCmk": {
-            "Description": "AWS KMS Customer Master Key (CMK) to encrypt database cluster",
-            "Type": "String"
-        },
-        "DatabaseEncrpytedBoolean": {
-            "AllowedValues": [
-                true,
-                false
-            ],
-            "Default": true,
-            "Description": "Indicates whether the DB instances in the cluster are encrypted.",
-            "Type": "String"
-        },
-        "DatabaseInstanceType": {
-            "AllowedValues": [
-                "db.t2.small",
-                "db.t2.medium",
-                "db.r3.large",
-                "db.r3.xlarge",
-                "db.r3.2xlarge",
-                "db.r3.4xlarge",
-                "db.r3.8xlarge",
-                "db.r4.large",
-                "db.r4.xlarge",
-                "db.r4.2xlarge",
-                "db.r4.4xlarge",
-                "db.r4.8xlarge",
-                "db.r4.16xlarge"
-            ],
-            "ConstraintDescription": "Must be a valid RDS instance class.",
-            "Default": "db.t2.medium",
-            "Description": "The Amazon RDS database instance class.",
-            "Type": "String"
-        },
-        "DatabaseMasterUsername": {
-            "AllowedPattern": "^([a-zA-Z0-9]*)$",
-            "Description": "The Amazon RDS master username.",
-            "ConstraintDescription": "Must contain only alphanumeric characters (minimum 8; maximum 16).",
-            "MaxLength": 16,
-            "MinLength": 8,
-            "Type": "String"
-        },
-        "DatabaseMasterPassword": {
-            "AllowedPattern": "^([a-zA-Z0-9`~!#$%^&*()_+,\\\\-])*$",
-            "ConstraintDescription": "Must be letters (upper or lower), numbers, spaces, and these special characters `~!#$%^&*()_+,-",
-            "Description": "The Amazon RDS master password. Letters, numbers, spaces, and these special characters `~!#$%^&*()_+,-",
-            "MaxLength": 41,
-            "MinLength": 8,
-            "NoEcho": true,
-            "Type": "String"
-        },
-        "DatabaseName": {
-            "AllowedPattern": "^([a-zA-Z0-9]*)$",
-            "Description": "The Amazon RDS master database name.",
-            "Type": "String"
-        },
-        "ElastiCacheNodeType": {
-            "AllowedValues": [
-                "cache.t2.micro",
-                "cache.t2.small",
-                "cache.t2.medium",
-                "cache.m4.large",
-                "cache.m4.xlarge",
-                "cache.m4.2xlarge",
-                "cache.m4.4xlarge",
-                "cache.m4.10xlarge",
-                "cache.m3.medium",
-                "cache.m3.large",
-                "cache.m3.xlarge",
-                "cache.m3.2xlarge",
-                "cache.r3.large",
-                "cache.r3.xlarge",
-                "cache.r3.2xlarge",
-                "cache.r3.4xlarge",
-                "cache.r3.8xlarge"
-            ],
-            "ConstraintDescription": "Must be a valid Amazon ElastiCache node type.",
-            "Default": "cache.t2.medium",
-            "Description": "The Amazon ElastiCache cluster node type.",
-            "Type": "String"
-        },
         "EC2KeyName": {
             "ConstraintDescription": "Must be letters (upper or lower), numbers, and special characters.",
             "Description": "Name of an EC2 KeyPair. Your bastion & Web instances will launch with this KeyPair.",
@@ -347,15 +219,6 @@
         "PublicAlbAcmCertificate": {
             "AllowedPattern": "^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$",
             "Description": "[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the domain name for the website you use.",
-            "Type": "String"
-        },
-        "UseElastiCacheBoolean": {
-            "AllowedValues": [
-                true,
-                false
-            ],
-            "Default": true,
-            "Description": "Specifies whether an ElastiCache Cache Cluster should be created to cache website database content.",
             "Type": "String"
         },
         "WebAsgMax": {
@@ -480,7 +343,6 @@
         },
         "NumberOfAZs": {
             "AllowedValues": [
-                1,
                 2
             ],
             "Default": 2,
@@ -501,20 +363,6 @@
             ],
             "Default": "default",
             "Description": "The allowed tenancy of instances launched into the VPC",
-            "Type": "String"
-        },
-        "DataSubnet0Cidr": {
-            "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$",
-            "ConstraintDescription": "CIDR block parameter must be in the form x.x.x.x/16-28",
-            "Default": "10.0.100.0/24",
-            "Description": "CIDR block for data subnet 0 located in Availability Zone 0",
-            "Type": "String"
-        },
-        "DataSubnet1Cidr": {
-            "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$",
-            "ConstraintDescription": "CIDR block parameter must be in the form x.x.x.x/16-28",
-            "Default": "10.0.101.0/24",
-            "Description": "CIDR block for data subnet 1 located in Availability Zone 1",
             "Type": "String"
         },
         "PublicSubnet0Cidr": {
@@ -598,21 +446,6 @@
                     ]
                 }
             ]
-        },
-        "DeployElastiCache": {
-            "Fn::And": [
-                {
-                    "Fn::Equals": [
-                        true,
-                        {
-                            "Ref": "UseElastiCacheBoolean"
-                        }
-                    ]
-                },
-                {
-                    "Condition": "AvailableAWSRegion"
-                }
-            ]
         }
     },
     "Resources": {
@@ -650,37 +483,6 @@
                 "TemplateURL": "https://cf-templates-dhe.s3-eu-west-1.amazonaws.com/custom-ref-web-db/custom-ref-web-db-03-bastion.json"
             }
         },
-        "elasticache": {
-            "Condition": "DeployElastiCache",
-            "DependsOn": [
-                "newvpc",
-                "securitygroups"
-            ],
-            "Type": "AWS::CloudFormation::Stack",
-            "Properties": {
-                "Parameters": {
-                    "Subnet": {
-                        "Fn::GetAtt": [
-                            "newvpc",
-                            "Outputs.DataSubnet"
-                        ]
-                    },
-                    "ElastiCacheNodeType": {
-                        "Ref": "ElastiCacheNodeType"
-                    },
-                    "ElastiCacheSecurityGroup": {
-                        "Fn::GetAtt": [
-                            "securitygroups",
-                            "Outputs.ElastiCacheSecurityGroup"
-                        ]
-                    },
-                    "NumberOfSubnets": {
-                        "Ref": "NumberOfAZs"
-                    }
-                },
-                "TemplateURL": "https://cf-templates-dhe.s3-eu-west-1.amazonaws.com/custom-ref-web-db/custom-ref-web-db-03-elasticache.json"
-            }
-        },
         "newvpc": {
             "Type": "AWS::CloudFormation::Stack",
             "Properties": {
@@ -713,12 +515,6 @@
                     },
                     "WebSubnet1Cidr": {
                         "Ref": "WebSubnet1Cidr"
-                    },
-                    "DataSubnet0Cidr": {
-                        "Ref": "DataSubnet0Cidr"
-                    },
-                    "DataSubnet1Cidr": {
-                        "Ref": "DataSubnet1Cidr"
                     }
                 },
                 "TemplateURL": "https://cf-templates-dhe.s3-eu-west-1.amazonaws.com/custom-ref-web-db/custom-ref-web-db-01-newvpc.json"
@@ -761,52 +557,6 @@
                 "TemplateURL": "https://cf-templates-dhe.s3-eu-west-1.amazonaws.com/custom-ref-web-db/custom-ref-web-db-03-publicalb.json"
             }
         },
-        "rds": {
-            "Condition": "AvailableAWSRegion",
-            "DependsOn": [
-                "newvpc",
-                "securitygroups"
-            ],
-            "Type": "AWS::CloudFormation::Stack",
-            "Properties": {
-                "Parameters": {
-                    "DatabaseInstanceType": {
-                        "Ref": "DatabaseInstanceType"
-                    },
-                    "DatabaseMasterUsername": {
-                        "Ref": "DatabaseMasterUsername"
-                    },
-                    "DatabaseMasterPassword": {
-                        "Ref": "DatabaseMasterPassword"
-                    },
-                    "DatabaseName": {
-                        "Ref": "DatabaseName"
-                    },
-                    "DatabaseEncrpytedBoolean": {
-                        "Ref": "DatabaseEncrpytedBoolean"
-                    },
-                    "DatabaseCmk": {
-                        "Ref": "DatabaseCmk"
-                    },
-                    "DatabaseSecurityGroup": {
-                        "Fn::GetAtt": [
-                            "securitygroups",
-                            "Outputs.DatabaseSecurityGroup"
-                        ]
-                    },
-                    "Subnet": {
-                        "Fn::GetAtt": [
-                            "newvpc",
-                            "Outputs.DataSubnet"
-                        ]
-                    },
-                    "NumberOfSubnets": {
-                        "Ref": "NumberOfAZs"
-                    }
-                },
-                "TemplateURL": "https://cf-templates-dhe.s3-eu-west-1.amazonaws.com/custom-ref-web-db/custom-ref-web-db-03-rds.json"
-            }
-        },
         "securitygroups": {
             "Condition": "AvailableAWSRegion",
             "DependsOn": "newvpc",
@@ -836,21 +586,6 @@
             "Type": "AWS::CloudFormation::Stack",
             "Properties": {
                 "Parameters": {
-                    "DatabaseClusterEndpointAddress": {
-                        "Fn::GetAtt": [
-                            "rds",
-                            "Outputs.DatabaseClusterEndpointAddress"
-                        ]
-                    },
-                    "DatabaseMasterUsername": {
-                        "Ref": "DatabaseMasterUsername"
-                    },
-                    "DatabaseMasterPassword": {
-                        "Ref": "DatabaseMasterPassword"
-                    },
-                    "DatabaseName": {
-                        "Ref": "DatabaseName"
-                    },
                     "EC2KeyName": {
                         "Ref": "EC2KeyName"
                     },
@@ -922,8 +657,8 @@
                 ]
             }
         },
-        "WebserverUrl": {
-            "Description": "The URL of the Webserver site",
+        "SecurityApplianceUrl": {
+            "Description": "The URL of the Security Appliance",
             "Value": {
                 "Fn::GetAtt": [
                     "publicalb",

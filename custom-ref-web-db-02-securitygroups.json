@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Reference Architecture to host WordPress on AWS - Creates VPC security groups",
+    "Description": "Reference Architectureto host Security Appliance on AWS - Creates VPC security groups",
     "Metadata": {
         "Authors": {
             "Description": "Darryl Osborne (darrylo@amazon.com)"
@@ -53,46 +53,37 @@
                         "IpProtocol": "tcp",
                         "FromPort": 22,
                         "ToPort": 22,
+                        "SourceSecurityGroupId": {
+                            "Ref": "FWSecurityGroup"
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            }
+        },
+        "FWSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Security group for Security Appliances",
+                "SecurityGroupIngress": [
+                    {
+                        "Description": "Allow HTTPS Access to FW"
+                        "IpProtocol": "tcp",
+                        "FromPort": 443,
+                        "ToPort": 443,
                         "CidrIp": {
                             "Ref": "SshAccessCidr"
                         }
-                    }
-                ],
-                "VpcId": {
-                    "Ref": "Vpc"
-                }
-            }
-        },
-        "DatabaseSecurityGroup": {
-            "Type": "AWS::EC2::SecurityGroup",
-            "Properties": {
-                "GroupDescription": "Security group for Amazon RDS cluster",
-                "SecurityGroupIngress": [
+                    },
                     {
+                        "Description": "Allow SSH Access to FW"
                         "IpProtocol": "tcp",
-                        "FromPort": 3306,
-                        "ToPort": 3306,
-                        "SourceSecurityGroupId": {
-                            "Ref": "WebSecurityGroup"
-                        }
-                    }
-                ],
-                "VpcId": {
-                    "Ref": "Vpc"
-                }
-            }
-        },
-        "ElastiCacheSecurityGroup": {
-            "Type": "AWS::EC2::SecurityGroup",
-            "Properties": {
-                "GroupDescription": "Security group for ElastiCache cache cluster",
-                "SecurityGroupIngress": [
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": 11211,
-                        "ToPort": 11211,
-                        "SourceSecurityGroupId": {
-                            "Ref": "WebSecurityGroup"
+                        "FromPort": 22,
+                        "ToPort": 22,
+                        "CidrIp": {
+                            "Ref": "SshAccessCidr"
                         }
                     }
                 ],
@@ -158,7 +149,26 @@
                     "Ref": "Vpc"
                 }
             }
-        }
+        },
+        "DatabaseSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Security group for Amazon RDS cluster",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 3306,
+                        "ToPort": 3306,
+                        "SourceSecurityGroupId": {
+                            "Ref": "WebSecurityGroup"
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            }
+        },
     },
     "Outputs": {
         "BastionSecurityGroup": {
@@ -166,14 +176,9 @@
                 "Ref": "BastionSecurityGroup"
             }
         },
-        "DatabaseSecurityGroup": {
+        "FWSecurityGroup": {
             "Value": {
-                "Ref": "DatabaseSecurityGroup"
-            }
-        },
-        "ElastiCacheSecurityGroup": {
-            "Value": {
-                "Ref": "ElastiCacheSecurityGroup"
+                "Ref": "FWSecurityGroup"
             }
         },
         "PublicAlbSecurityGroup": {
@@ -184,6 +189,11 @@
         "WebSecurityGroup": {
             "Value": {
                 "Ref": "WebSecurityGroup"
+            }
+        },
+        "DatabaseSecurityGroup": {
+            "Value": {
+                "Ref": "DatabaseSecurityGroup"
             }
         }
     }
