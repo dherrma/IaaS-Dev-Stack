@@ -636,6 +636,47 @@
             }
         }
     },
+    "secappliance": {
+            "Condition": "AvailableAWSRegion",
+            "DependsOn": [
+                "newvpc",
+                "securitygroups"
+            ],
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "Parameters": {
+                    "EC2KeyName": {
+                        "Ref": "EC2KeyName"
+                    },
+                    "NumberOfSubnets": {
+                        "Ref": "NumberOfAZs"
+                    },
+                    "SecAsgMax": {
+                        "Ref": "SecAsgMax"
+                    },
+                    "SecAsgMin": {
+                        "Ref": "SecAsgMin"
+                    },
+                    "SecInstanceType": {
+                        "Ref": "SecInstanceType"
+                    },
+                    "FWSecurityGroup": {
+                        "Fn::GetAtt": [
+                            "securitygroups",
+                            "Outputs.FWSecurityGroup"
+                        ]
+                    },
+                    "Subnet": {
+                        "Fn::GetAtt": [
+                            "newvpc",
+                            "Outputs.PublicSubnet"
+                        ]
+                    }
+                },
+                "TemplateURL": "https://cf-templates-dhe.s3-eu-west-1.amazonaws.com/custom-ref-web-db/custom-ref-web-db-secappliance.json"
+            }
+        }
+    },
     "Outputs": {
         "StackStatus": {
             "Description": "Master Stack Status",
@@ -658,7 +699,7 @@
             }
         },
         "SecurityApplianceUrl": {
-            "Description": "The URL of the Security Appliance",
+            "Description": "The URL of the Webserver Appliance",
             "Value": {
                 "Fn::GetAtt": [
                     "publicalb",

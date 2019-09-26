@@ -161,6 +161,24 @@
             "Type": "List<AWS::EC2::Subnet::Id>"
         }
     },
+    "Conditions": {
+        "NumberOfSubnets1": {
+            "Fn::Equals": [
+                1,
+                {
+                    "Ref": "NumberOfSubnets"
+                }
+            ]
+        },
+        "NumberOfSubnets2": {
+            "Fn::Equals": [
+                2,
+                {
+                    "Ref": "NumberOfSubnets"
+                }
+            ]
+        }
+    },
     "Mappings": {
         "RegionMap": {
             "ap-northeast-1": {
@@ -249,7 +267,7 @@
                                 ]
                             }
                         ],
-                        {
+                        [
                             {
                                 "Fn::Select": [
                                     0,
@@ -266,7 +284,7 @@
                                     }
                                 ]
                             }
-                        }
+                        ]
                     ]
                 }
             }

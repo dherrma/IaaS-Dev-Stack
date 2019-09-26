@@ -69,7 +69,7 @@
                 "GroupDescription": "Security group for Security Appliances",
                 "SecurityGroupIngress": [
                     {
-                        "Description": "Allow HTTPS Access to FW"
+                        "Description": "Allow HTTPS Access to FW",
                         "IpProtocol": "tcp",
                         "FromPort": 443,
                         "ToPort": 443,
@@ -78,7 +78,7 @@
                         }
                     },
                     {
-                        "Description": "Allow SSH Access to FW"
+                        "Description": "Allow SSH Access to FW",
                         "IpProtocol": "tcp",
                         "FromPort": 22,
                         "ToPort": 22,

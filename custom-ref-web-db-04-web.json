@@ -26,32 +26,9 @@
                         "PublicAlbHostname",
                         "SslCertificate"
                     ]
-                },
-                {
-                    "Label": {
-                        "default": "Database Parameters"
-                    },
-                    "Parameters": [
-                        "DatabaseClusterEndpointAddress",
-                        "DatabaseName",
-                        "DatabaseMasterUsername",
-                        "DatabaseMasterPassword"
-                    ]
                 }
             ],
             "ParameterLabels": {
-                "DatabaseClusterEndpointAddress": {
-                    "default": "DB Cluster Endpoint Address"
-                },
-                "DatabaseMasterUsername": {
-                    "default": "DB Master Username"
-                },
-                "DatabaseMasterPassword": {
-                    "default": "DB Master Password"
-                },
-                "DatabaseName": {
-                    "default": "DB Name"
-                },
                 "EC2KeyName": {
                     "default": "Existing Key Pair"
                 },
@@ -86,32 +63,6 @@
         }
     },
     "Parameters": {
-        "DatabaseClusterEndpointAddress": {
-            "Description": "The RDS cluster endpoint address.",
-            "Type": "String"
-        },
-        "DatabaseMasterUsername": {
-            "AllowedPattern": "^([a-zA-Z0-9]*)$",
-            "Description": "The Amazon RDS master username.",
-            "ConstraintDescription": "Must contain only alphanumeric characters and be at least 8 characters.",
-            "MaxLength": 16,
-            "MinLength": 1,
-            "Type": "String"
-        },
-        "DatabaseMasterPassword": {
-            "AllowedPattern": "^([a-z0-9A-Z`~!#$%^&*()_+,\\\\-])*$",
-            "ConstraintDescription": "Must be letters (upper or lower), numbers, and these special characters '_'`~!#$%^&*()_+,-",
-            "Description": "The Amazon RDS master password.",
-            "MaxLength": 41,
-            "MinLength": 8,
-            "NoEcho": true,
-            "Type": "String"
-        },
-        "DatabaseName": {
-            "AllowedPattern": "^([a-zA-Z0-9]*)$",
-            "Description": "The Amazon RDS master database name.",
-            "Type": "String"
-        },
         "EC2KeyName": {
             "AllowedPattern": "^([a-zA-Z0-9 @.`~!#$%^&*()_+,\\\\-])*$",
             "ConstraintDescription": "Must be letters (upper or lower), numbers, and special characters.",

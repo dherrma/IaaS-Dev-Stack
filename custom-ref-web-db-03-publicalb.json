@@ -148,7 +148,7 @@
             "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
             "Properties": {
                 "Scheme": "internet-facing",
-                "Subnets": {
+                "Subnets": [
                     "Fn::Select": [
                         0,
                         {
@@ -161,7 +161,7 @@
                             "Ref": "Subnet"
                         }
                     ]
-                },
+                ],
                 "LoadBalancerAttributes": [
                     {
                         "Key": "idle_timeout.timeout_seconds",

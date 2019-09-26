@@ -1,9 +1,9 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Reference Architecture to host WordPress on AWS - Creates bastion (desired:0; min:0; max:1) Auto Scaling group",
+    "Description": "Reference Architecture to host Security Appliance on AWS - Creates FW Auto Scaling group",
     "Metadata": {
         "Authors": {
-            "Description": "Darryl Osborne (darrylo@amazon.com)"
+            "Description": "David Herrmann <david.herrmann@controlware.de"
         },
         "License": {
             "Description": "Copyright 2018 Amazon.com, Inc. and its affiliates. All Rights Reserved. SPDX-License-Identifier: MIT-0"
@@ -12,24 +12,20 @@
             "ParameterGroups": [
                 {
                     "Label": {
-                        "default": "AWS Parameters"
+                        "default": "FW Parameters"
                     },
                     "Parameters": [
                         "EC2KeyName",
-                        "BastionInstanceType",
-                        "BastionSecurityGroup",
+                        "SecInstanceType",
+                        "SecAsgMax",
+                        "SecAsgMin",
+                        "FWSecurityGroup,
                         "NumberOfSubnets",
                         "Subnet"
                     ]
                 }
             ],
             "ParameterLabels": {
-                "BastionSecurityGroup": {
-                    "default": "Bastion Security Group"
-                },
-                "BastionInstanceType": {
-                    "default": "Instance Type"
-                },
                 "EC2KeyName": {
                     "default": "Existing Key Pair"
                 },
@@ -38,16 +34,56 @@
                 },
                 "Subnet": {
                     "default": "Subnets"
+                },
+                "SecAsgMax": {
+                    "default": "Sec ASG Max"
+                },
+                "SecAsgMin": {
+                    "default": "Sec ASG Min"
+                },
+                "SecInstanceType": {
+                    "default": "Web Instance Type"
+                },
+                "FWSecurityGroup": {
+                    "default": "Web Security Group"
                 }
             }
         }
     },
     "Parameters": {
-        "BastionSecurityGroup": {
-            "Description": "Select the bastion security group.",
-            "Type": "AWS::EC2::SecurityGroup::Id"
+        "EC2KeyName": {
+            "AllowedPattern": "^([a-zA-Z0-9 @.`~!#$%^&*()_+,\\\\-])*$",
+            "ConstraintDescription": "Must be letters (upper or lower), numbers, and special characters.",
+            "Description": "Name of an EC2 KeyPair. Your bastion & Web instances will launch with this KeyPair.",
+            "Type": "AWS::EC2::KeyPair::KeyName"
         },
-        "BastionInstanceType": {
+        "NumberOfSubnets": {
+            "AllowedValues": [
+                2
+            ],
+            "Default": 2,
+            "Description": "Number of subnets. This must match your selections in the list of subnets below.",
+            "Type": "String"
+        },
+        "Subnet": {
+            "Description": "Select existing subnets. The number selected must match the number of subnets above. Subnets selected must be in separate AZs.",
+            "Type": "List<AWS::EC2::Subnet::Id>"
+        },
+        "SecAsgMax": {
+            "AllowedPattern": "^((?!0$)[1-2]?[0-9]|30)$",
+            "ConstraintDescription": "Must be a number between 1 and 30.",
+            "Default": 4,
+            "Description": "Specifies the maximum number of EC2 instances in the Web Autoscaling Group.",
+            "Type": "String"
+        },
+        "SecAsgMin": {
+            "AllowedPattern": "^([0-0]?[0-9]|10)$",
+            "ConstraintDescription": "Must be a number between 0 and 10.",
+            "Default": 2,
+            "Description": "Specifies the minimum number of EC2 instances in the Web Autoscaling Group.",
+            "Type": "String"
+        },
+        "SecInstanceType": {
             "AllowedValues": [
                 "t2.nano",
                 "t2.micro",
@@ -140,26 +176,13 @@
                 "p3.16xlarge"
             ],
             "ConstraintDescription": "Must be a valid Amazon EC2 instance type.",
-            "Default": "t2.nano",
-            "Description": "Bastion EC2 instance type.",
+            "Default": "t2.large",
+            "Description": "The Amazon EC2 instance type for your web instances.",
             "Type": "String"
         },
-        "EC2KeyName": {
-            "Description": "Name of an EC2 KeyPair. Your bastion instances will launch with this KeyPair.",
-            "Type": "AWS::EC2::KeyPair::KeyName"
-        },
-        "NumberOfSubnets": {
-            "AllowedValues": [
-                1,
-                2
-            ],
-            "Default": 2,
-            "Description": "Number of subnets. This must match your selections in the list of subnets below.",
-            "Type": "String"
-        },
-        "Subnet": {
-            "Description": "Select existing subnets. The number selected must match the number of subnets above. Subnets selected must be in separate AZs.",
-            "Type": "List<AWS::EC2::Subnet::Id>"
+        "FWSecurityGroup": {
+            "Description": "Select the web security group.",
+            "Type": "AWS::EC2::SecurityGroup::Id"
         }
     },
     "Conditions": {
@@ -195,145 +218,36 @@
     },
     "Mappings": {
         "RegionMap": {
-            "ap-northeast-1": {
-                "AMI": "ami-da9e2cbc"
-            },
-            "ap-northeast-2": {
-                "AMI": "ami-1196317f"
-            },
-            "ap-south-1": {
-                "AMI": "ami-d5c18eba"
-            },
-            "ap-southeast-1": {
-                "AMI": "ami-c63d6aa5"
-            },
-            "ap-southeast-2": {
-                "AMI": "ami-ff4ea59d"
-            },
-            "ca-central-1": {
-                "AMI": "ami-d29e25b6"
+            "eu-north-1": {
+                "AMI": "ami-18b63d66"
             },
             "eu-central-1": {
-                "AMI": "ami-bf2ba8d0"
+                "AMI": "ami-040957a1be86ccb3e"
             },
             "eu-west-1": {
-                "AMI": "ami-1a962263"
+                "AMI": "ami-012852ea581b7d96d"
             },
             "eu-west-2": {
-                "AMI": "ami-e7d6c983"
+                "AMI": "ami-0e561192fe493d225"
             },
-            "sa-east-1": {
-                "AMI": "ami-286f2a44"
-            },
-            "us-east-1": {
-                "AMI": "ami-55ef662f"
-            },
-            "us-east-2": {
-                "AMI": "ami-15e9c770"
-            },
-            "us-west-1": {
-                "AMI": "ami-a51f27c5"
-            },
-            "us-west-2": {
-                "AMI": "ami-bf4193c7"
+            "eu-west-3": {
+                "AMI": "ami-0e53fb2f442d064a4"
             }
         }
     },
     "Resources": {
-        "BastionAutoScalingGroup": {
-            "Type": "AWS::AutoScaling::AutoScalingGroup",
-            "Properties": {
-                "Cooldown": 60,
-                "HealthCheckGracePeriod": 120,
-                "HealthCheckType": "EC2",
-                "LaunchConfigurationName": {
-                    "Ref": "BastionLaunchConfiguration"
-                },
-                "MaxSize": 1,
-                "MinSize": 0,
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    "Bastion / ",
-                                    {
-                                        "Ref": "AWS::StackName"
-                                    }
-                                ]
-                            ]
-                        },
-                        "PropagateAtLaunch": true
-                    }
-                ],
-                "VPCZoneIdentifier": {
-                    "Fn::If": [
-                        "NumberOfSubnets1",
-                        [
-                            {
-                                "Fn::Select": [
-                                    0,
-                                    {
-                                        "Ref": "Subnet"
-                                    }
-                                ]
-                            }
-                        ],
-                        {
-                            "Fn::Select": [
-                                0,
-                                {
-                                    "Ref": "Subnet"
-                                }
-                            ]
-                        }
-                    ]
-                }
-            }
-        },
-        "BastionLaunchConfiguration": {
-            "Type": "AWS::AutoScaling::LaunchConfiguration",
-            "Properties": {
-                "IamInstanceProfile": {
-                    "Ref": "BastionInstanceProfile"
-                },
-                "ImageId": {
-                    "Fn::FindInMap": [
-                        "RegionMap",
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "AMI"
-                    ]
-                },
-                "InstanceMonitoring": true,
-                "InstanceType": {
-                    "Ref": "BastionInstanceType"
-                },
-                "KeyName": {
-                    "Ref": "EC2KeyName"
-                },
-                "SecurityGroups": [
-                    {
-                        "Ref": "BastionSecurityGroup"
-                    }
-                ]
-            }
-        },
-        "BastionInstanceProfile": {
+        "SecInstanceProfile": {
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
                 "Path": "/",
                 "Roles": [
                     {
-                        "Ref": "BastionInstanceRole"
+                        "Ref": "SecInstanceRole"
                     }
                 ]
             }
         },
-        "BastionInstanceRole": {
+        "SecInstanceRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
                 "AssumeRolePolicyDocument": {
@@ -376,6 +290,117 @@
                     }
                 ]
             }
+        },
+        "SecAutoScalingGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "Cooldown": 60,
+                "HealthCheckGracePeriod": 120,
+                "HealthCheckType": "EC2",
+                "LaunchConfigurationName": {
+                    "Ref": "SecLaunchConfiguration"
+                },
+                "MaxSize": {
+                    "Ref": "SecAsgMax"
+                },
+                "MinSize": {
+                    "Ref": "SecAsgMin"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "Sec ASG / ",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        },
+                        "PropagateAtLaunch": true
+                    }
+                ],
+                "VPCZoneIdentifier": {
+                    "Fn::If": [
+                        "NumberOfSubnets1",
+                        [
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Ref": "Subnet"
+                                    }
+                                ]
+                            }
+                        ],
+                        [
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Ref": "Subnet"
+                                    }
+                                ]
+                            },
+                            {
+                                "Fn::Select": [
+                                    1,
+                                    {
+                                        "Ref": "Subnet"
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                }
+            },
+            "CreationPolicy": {
+                "ResourceSignal": {
+                    "Count": {
+                        "Ref": "SecAsgMin"
+                    },
+                    "Timeout": "PT5M"
+                }
+            }
+        },
+        "SecLaunchConfiguration": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "IamInstanceProfile": {
+                    "Ref": "SecInstanceProfile"
+                },
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "RegionMap",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "AMI"
+                    ]
+                },
+                "InstanceMonitoring": true,
+                "InstanceType": {
+                    "Ref": "SecInstanceType"
+                },
+                "KeyName": {
+                    "Ref": "EC2KeyName"
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref": "FWSecurityGroup"
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Sub": "#!/bin/bash -xe\nyum update"
+                    }
+                }
+            }
         }
+    },
+    "Outputs": {
     }
 }
