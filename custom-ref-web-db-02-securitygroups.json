@@ -1,9 +1,9 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Reference Architecture to host WordPress on AWS - Creates VPC security groups",
+    "Description": "Reference Architecture to host Security Appliance on AWS - Creates VPC security groups",
     "Metadata": {
         "Authors": {
-            "Description": "Darryl Osborne (darrylo@amazon.com)"
+            "Description": "David Herrmann <david.herrmann@controlware.de>"
         },
         "License": {
             "Description": "Copyright 2018 Amazon.com, Inc. and its affiliates. All Rights Reserved. SPDX-License-Identifier: MIT-0"
@@ -50,11 +50,133 @@
                 "GroupDescription": "Security group for Bastion instances",
                 "SecurityGroupIngress": [
                     {
+                        "Description": "Allow SSH to Bastion Host",
                         "IpProtocol": "tcp",
                         "FromPort": 22,
                         "ToPort": 22,
-                        "CidrIp": {
-                            "Ref": "SshAccessCidr"
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            }
+        },
+        "FWSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Security group for Security Appliances",
+                "SecurityGroupIngress": [
+                    {
+                        "Description": "Allow HTTP Access to FW",
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "SourceSecurityGroupId": {
+                            "Ref": "PublicAlbSecurityGroup"
+                        }
+                    },
+                    {
+                        "Description": "Allow HTTPS Access to FW",
+                        "IpProtocol": "tcp",
+                        "FromPort": 443,
+                        "ToPort": 443,
+                        "SourceSecurityGroupId": {
+                            "Ref": "PublicAlbSecurityGroup"
+                        }
+                    },
+                    {
+                        "Description": "Allow SSH Access to FW",
+                        "IpProtocol": "tcp",
+                        "FromPort": 22,
+                        "ToPort": 22,
+                        "SourceSecurityGroupId": {
+                            "Ref": "BastionSecurityGroup"
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            }
+        },
+        "PublicAlbSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Security group for Public ALB",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 443,
+                        "ToPort": 443,
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            }
+        },
+        "PrivateAlbSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Security group for Private ALB",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 443,
+                        "ToPort": 443,
+                        "SourceSecurityGroupId": {
+                            "Ref": "FWSecurityGroup"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "SourceSecurityGroupId": {
+                            "Ref": "FWSecurityGroup"
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            }
+        },
+        "WebSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Security group for web instances",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "SourceSecurityGroupId": {
+                            "Ref": "PrivateAlbSecurityGroup"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 443,
+                        "ToPort": 443,
+                        "SourceSecurityGroupId": {
+                            "Ref": "PrivateAlbSecurityGroup"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 22,
+                        "ToPort": 22,
+                        "SourceSecurityGroupId": {
+                            "Ref": "BastionSecurityGroup"
                         }
                     }
                 ],
@@ -82,83 +204,6 @@
                 }
             }
         },
-        "ElastiCacheSecurityGroup": {
-            "Type": "AWS::EC2::SecurityGroup",
-            "Properties": {
-                "GroupDescription": "Security group for ElastiCache cache cluster",
-                "SecurityGroupIngress": [
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": 11211,
-                        "ToPort": 11211,
-                        "SourceSecurityGroupId": {
-                            "Ref": "WebSecurityGroup"
-                        }
-                    }
-                ],
-                "VpcId": {
-                    "Ref": "Vpc"
-                }
-            }
-        },
-        "PublicAlbSecurityGroup": {
-            "Type": "AWS::EC2::SecurityGroup",
-            "Properties": {
-                "GroupDescription": "Security group for ALB",
-                "SecurityGroupIngress": [
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": 443,
-                        "ToPort": 443,
-                        "CidrIp": "0.0.0.0/0"
-                    },
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": 80,
-                        "ToPort": 80,
-                        "CidrIp": "0.0.0.0/0"
-                    }
-                ],
-                "VpcId": {
-                    "Ref": "Vpc"
-                }
-            }
-        },
-        "WebSecurityGroup": {
-            "Type": "AWS::EC2::SecurityGroup",
-            "Properties": {
-                "GroupDescription": "Security group for web instances",
-                "SecurityGroupIngress": [
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": 80,
-                        "ToPort": 80,
-                        "SourceSecurityGroupId": {
-                            "Ref": "PublicAlbSecurityGroup"
-                        }
-                    },
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": 443,
-                        "ToPort": 443,
-                        "SourceSecurityGroupId": {
-                            "Ref": "PublicAlbSecurityGroup"
-                        }
-                    },
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": 22,
-                        "ToPort": 22,
-                        "SourceSecurityGroupId": {
-                            "Ref": "BastionSecurityGroup"
-                        }
-                    }
-                ],
-                "VpcId": {
-                    "Ref": "Vpc"
-                }
-            }
-        }
     },
     "Outputs": {
         "BastionSecurityGroup": {
@@ -166,24 +211,29 @@
                 "Ref": "BastionSecurityGroup"
             }
         },
-        "DatabaseSecurityGroup": {
-            "Value": {
-                "Ref": "DatabaseSecurityGroup"
-            }
-        },
-        "ElastiCacheSecurityGroup": {
-            "Value": {
-                "Ref": "ElastiCacheSecurityGroup"
-            }
-        },
         "PublicAlbSecurityGroup": {
             "Value": {
                 "Ref": "PublicAlbSecurityGroup"
             }
         },
+        "FWSecurityGroup": {
+            "Value": {
+                "Ref": "FWSecurityGroup"
+            }
+        },
+        "PrivateAlbSecurityGroup": {
+            "Value": {
+                "Ref": "PrivateAlbSecurityGroup"
+            }
+        },
         "WebSecurityGroup": {
             "Value": {
                 "Ref": "WebSecurityGroup"
+            }
+        },
+        "DatabaseSecurityGroup": {
+            "Value": {
+                "Ref": "DatabaseSecurityGroup"
             }
         }
     }

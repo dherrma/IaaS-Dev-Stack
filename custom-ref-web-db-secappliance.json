@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Reference Architecture to host Security Appliance on AWS - Creates Webserver Auto Scaling group",
+    "Description": "Reference Architecture to host Security Appliance on AWS - Creates FW Auto Scaling group",
     "Metadata": {
         "Authors": {
             "Description": "David Herrmann <david.herrmann@controlware.de"
@@ -12,19 +12,19 @@
             "ParameterGroups": [
                 {
                     "Label": {
-                        "default": "Web Parameters"
+                        "default": "FW Parameters"
                     },
                     "Parameters": [
                         "EC2KeyName",
-                        "WebInstanceType",
-                        "WebAsgMax",
-                        "WebAsgMin",
-                        "WebSecurityGroup",
+                        "SecInstanceType",
+                        "SecAsgMax",
+                        "SecAsgMin",
+                        "FWSecurityGroup",
                         "NumberOfSubnets",
                         "Subnet",
-                        "PrivateAlbTargetGroupArn",
-                        "PrivateAlbHostname",
-                        "SslCertificate"
+                        "PublicAlbTargetGroupArn",
+                        "PublicAlbHostname",
+                        "PublicSslCertificate"
                     ]
                 }
             ],
@@ -35,28 +35,28 @@
                 "NumberOfSubnets": {
                     "default": "Number of subnets"
                 },
-                "PrivateAlbTargetGroupArn": {
-                    "default": "Private Alb Target Group Arn"
+                "PublicAlbTargetGroupArn": {
+                    "default": "Public Alb Target Group Arn"
                 },
-                "PrivateAlbHostname": {
-                    "default": "Private Alb Hostname"
+                "PublicAlbHostname": {
+                    "default": "Public Alb Hostname"
                 },
-                "PrivateSslCertificate": {
-                    "default": "ACM Cert attached to Private Alb"
-                },
+                "PublicSslCertificate": {
+                    "default": "ACM Cert attached to Public Alb"
+                },                            
                 "Subnet": {
                     "default": "Subnets"
                 },
-                "WebAsgMax": {
-                    "default": "Web ASG Max"
+                "SecAsgMax": {
+                    "default": "Sec ASG Max"
                 },
-                "WebAsgMin": {
-                    "default": "Web ASG Min"
+                "SecAsgMin": {
+                    "default": "Sec ASG Min"
                 },
-                "WebInstanceType": {
+                "SecInstanceType": {
                     "default": "Web Instance Type"
                 },
-                "WebSecurityGroup": {
+                "FWSecurityGroup": {
                     "default": "Web Security Group"
                 }
             }
@@ -71,49 +71,48 @@
         },
         "NumberOfSubnets": {
             "AllowedValues": [
-                1,
                 2
             ],
             "Default": 2,
             "Description": "Number of subnets. This must match your selections in the list of subnets below.",
             "Type": "String"
         },
-        "PrivateAlbTargetGroupArn": {
-            "Description": "The private application load balancer target group arn.",
+        "PublicAlbTargetGroupArn": {
+            "Description": "The public application load balancer target group arn.",
             "Type": "String"
         },
-        "PrivateAlbHostname": {
-            "Description": "The hostname of the private ALB http form (e.g. http://abdc-12345-xyz.<region>.elb.amazonaws.com)",
+        "PublicAlbHostname": {
+            "Description": "The hostname of the public ALB http form (e.g. http://abdc-12345-xyz.<region>.elb.amazonaws.com)",
             "Type": "String"
         },
-        "PrivateSslCertificate": {
+        "PublicSslCertificate": {
             "AllowedValues": [
                 true,
                 false
             ],
             "Default": false,
-            "Description": "Is there an ACM SSL Certificate attached to the Private Alb?",
+            "Description": "Is there an ACM SSL Certificate attached to the Public Alb?",
             "Type": "String"
-        },
+        },                            
         "Subnet": {
             "Description": "Select existing subnets. The number selected must match the number of subnets above. Subnets selected must be in separate AZs.",
             "Type": "List<AWS::EC2::Subnet::Id>"
         },
-        "WebAsgMax": {
+        "SecAsgMax": {
             "AllowedPattern": "^((?!0$)[1-2]?[0-9]|30)$",
             "ConstraintDescription": "Must be a number between 1 and 30.",
             "Default": 4,
             "Description": "Specifies the maximum number of EC2 instances in the Web Autoscaling Group.",
             "Type": "String"
         },
-        "WebAsgMin": {
+        "SecAsgMin": {
             "AllowedPattern": "^([0-0]?[0-9]|10)$",
             "ConstraintDescription": "Must be a number between 0 and 10.",
             "Default": 2,
             "Description": "Specifies the minimum number of EC2 instances in the Web Autoscaling Group.",
             "Type": "String"
         },
-        "WebInstanceType": {
+        "SecInstanceType": {
             "AllowedValues": [
                 "t2.nano",
                 "t2.micro",
@@ -210,7 +209,7 @@
             "Description": "The Amazon EC2 instance type for your web instances.",
             "Type": "String"
         },
-        "WebSecurityGroup": {
+        "FWSecurityGroup": {
             "Description": "Select the web security group.",
             "Type": "AWS::EC2::SecurityGroup::Id"
         }
@@ -220,10 +219,10 @@
             "Fn::Equals": [
                 false,
                 {
-                    "Ref": "PrivateSslCertificate"
+                    "Ref": "PublicSslCertificate"
                 }
             ]
-        },
+        },                     
         "NumberOfSubnets1": {
             "Fn::Equals": [
                 1,
@@ -301,18 +300,18 @@
         }
     },
     "Resources": {
-        "WebInstanceProfile": {
+        "SecInstanceProfile": {
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
                 "Path": "/",
                 "Roles": [
                     {
-                        "Ref": "WebInstanceRole"
+                        "Ref": "SecInstanceRole"
                     }
                 ]
             }
         },
-        "WebInstanceRole": {
+        "SecInstanceRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
                 "AssumeRolePolicyDocument": {
@@ -356,20 +355,20 @@
                 ]
             }
         },
-        "WebAutoScalingGroup": {
+        "SecAutoScalingGroup": {
             "Type": "AWS::AutoScaling::AutoScalingGroup",
             "Properties": {
                 "Cooldown": 60,
                 "HealthCheckGracePeriod": 120,
                 "HealthCheckType": "ELB",
                 "LaunchConfigurationName": {
-                    "Ref": "WebLaunchConfiguration"
+                    "Ref": "SecLaunchConfiguration"
                 },
                 "MaxSize": {
-                    "Ref": "WebAsgMax"
+                    "Ref": "SecAsgMax"
                 },
                 "MinSize": {
-                    "Ref": "WebAsgMin"
+                    "Ref": "SecAsgMin"
                 },
                 "Tags": [
                     {
@@ -378,7 +377,7 @@
                             "Fn::Join": [
                                 "",
                                 [
-                                    "Web ASG / ",
+                                    "Sec ASG / ",
                                     {
                                         "Ref": "AWS::StackName"
                                     }
@@ -390,9 +389,9 @@
                 ],
                 "TargetGroupARNs": [
                     {
-                        "Ref": "PrivateAlbTargetGroupArn"
+                        "Ref": "PublicAlbTargetGroupArn"
                     }
-                ],
+                ],                     
                 "VPCZoneIdentifier": {
                     "Fn::If": [
                         "NumberOfSubnets1",
@@ -430,13 +429,13 @@
             "CreationPolicy": {
                 "ResourceSignal": {
                     "Count": {
-                        "Ref": "WebAsgMin"
+                        "Ref": "SecAsgMin"
                     },
                     "Timeout": "PT5M"
                 }
             }
         },
-        "WebLaunchConfiguration": {
+        "SecLaunchConfiguration": {
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Metadata": {
                 "AWS::CloudFormation::Init": {
@@ -509,10 +508,10 @@
                         }
                     }
                 }
-            },
+            },                         
             "Properties": {
                 "IamInstanceProfile": {
-                    "Ref": "WebInstanceProfile"
+                    "Ref": "SecInstanceProfile"
                 },
                 "ImageId": {
                     "Fn::FindInMap": [
@@ -525,21 +524,21 @@
                 },
                 "InstanceMonitoring": true,
                 "InstanceType": {
-                    "Ref": "WebInstanceType"
+                    "Ref": "SecInstanceType"
                 },
                 "KeyName": {
                     "Ref": "EC2KeyName"
                 },
                 "SecurityGroups": [
                     {
-                        "Ref": "WebSecurityGroup"
+                        "Ref": "FWSecurityGroup"
                     }
                 ],
                 "UserData": {
                     "Fn::Base64": {
-                        "Fn::Sub": "#!/bin/bash -xe\nyum update -y\n/opt/aws/bin/cfn-init --configsets deploy_webserver --verbose --stack ${AWS::StackName} --resource WebLaunchConfiguration --region ${AWS::Region}\n/opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource WebAutoScalingGroup --region ${AWS::Region}\n"
+                        "Fn::Sub": "#!/bin/bash -xe\nyum update -y\n/opt/aws/bin/cfn-init --configsets deploy_webserver --verbose --stack ${AWS::StackName} --resource SecLaunchConfiguration --region ${AWS::Region}\n/opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource SecAutoScalingGroup --region ${AWS::Region}\n"
                     }
-                }
+                }            
             }
         }
     },

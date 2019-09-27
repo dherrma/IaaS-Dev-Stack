@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Reference Architecture to host Security Appliance on AWS - Creates Public Application Load Balancer",
+    "Description": "Reference Architecture to host Security Appliance on AWS - Creates Private Application Load Balancer",
     "Metadata": {
         "Authors": {
             "Description": "David Herrmann <david.herrmann@controlware.de"
@@ -12,12 +12,12 @@
             "ParameterGroups": [
                 {
                     "Label": {
-                        "default": "Public ALB Parameters"
+                        "default": "ALB Parameters"
                     },
                     "Parameters": [
                         "Vpc",
-                        "PublicAlbAcmCertificate",
-                        "PublicAlbSecurityGroup",
+                        "PrivateAlbAcmCertificate",
+                        "PrivateAlbSecurityGroup",
                         "NumberOfSubnets",
                         "Subnet"
                     ]
@@ -27,11 +27,11 @@
                 "Vpc": {
                     "default": "Vpc Id"
                 },
-                "PublicAlbAcmCertificate": {
-                    "default": "Public ALB Certificate ARN"
+                "PrivateAlbAcmCertificate": {
+                    "default": "ALB Certificate ARN"
                 },
-                "PublicAlbSecurityGroup": {
-                    "default": "Public ALB Security Group"
+                "PrivateAlbSecurityGroup": {
+                    "default": "Private ALB Security Group"
                 },
                 "NumberOfSubnets": {
                     "default": "Number of subnets"
@@ -51,13 +51,13 @@
             "Description": "Number of subnets. This must match your selections in the list of subnets below.",
             "Type": "String"
         },
-        "PublicAlbAcmCertificate": {
+        "PrivateAlbAcmCertificate": {
             "AllowedPattern": "^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$",
-            "Description": "[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.",
+            "Description": "[ Optional ] The AWS Certification Manager certificate ARN for the PRIVATE ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.",
             "Type": "String"
         },
-        "PublicAlbSecurityGroup": {
-            "Description": "Select the ALB security group.",
+        "PrivateAlbSecurityGroup": {
+            "Description": "Select the PRIVATE ALB security group.",
             "Type": "AWS::EC2::SecurityGroup::Id"
         },
         "Subnet": {
@@ -76,7 +76,7 @@
                     "Fn::Equals": [
                         "",
                         {
-                            "Ref": "PublicAlbAcmCertificate"
+                            "Ref": "PrivateAlbAcmCertificate"
                         }
                     ]
                 }
@@ -86,7 +86,7 @@
             "Fn::Equals": [
                 "",
                 {
-                    "Ref": "PublicAlbAcmCertificate"
+                    "Ref": "PrivateAlbAcmCertificate"
                 }
             ]
         },
@@ -100,32 +100,32 @@
         }
     },
     "Resources": {
-        "PublicAlbListenerNoSslCertificate": {
+        "PrivateAlbListenerNoSslCertificate": {
             "Type": "AWS::ElasticLoadBalancingV2::Listener",
             "Properties": {
                 "DefaultActions": [
                     {
                         "Type": "forward",
                         "TargetGroupArn": {
-                            "Ref": "PublicAlbTargetGroup"
+                            "Ref": "PrivateAlbTargetGroup"
                         }
                     }
                 ],
                 "LoadBalancerArn": {
-                    "Ref": "PublicApplicationLoadBalancer"
+                    "Ref": "PrivateApplicationLoadBalancer"
                 },
                 "Port": 80,
                 "Protocol": "HTTP"
             }
         },
-        "PublicAlbListenerSslCertificate": {
+        "PrivateAlbListenerSslCertificate": {
             "Condition": "SslCertificate",
             "Type": "AWS::ElasticLoadBalancingV2::Listener",
             "Properties": {
                 "Certificates": [
                     {
                         "CertificateArn": {
-                            "Ref": "PublicAlbAcmCertificate"
+                            "Ref": "PrivateAlbAcmCertificate"
                         }
                     }
                 ],
@@ -133,21 +133,21 @@
                     {
                         "Type": "forward",
                         "TargetGroupArn": {
-                            "Ref": "PublicAlbTargetGroup"
+                            "Ref": "PrivateAlbTargetGroup"
                         }
                     }
                 ],
                 "LoadBalancerArn": {
-                    "Ref": "PublicApplicationLoadBalancer"
+                    "Ref": "PrivateApplicationLoadBalancer"
                 },
                 "Port": 443,
                 "Protocol": "HTTPS"
             }
         },
-        "PublicApplicationLoadBalancer": {
+        "PrivateApplicationLoadBalancer": {
             "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
             "Properties": {
-                "Scheme": "internet-facing",
+                "Scheme": "internal",
                 "Subnets": [
                     "Fn::Select": [
                         0,
@@ -170,7 +170,7 @@
                 ],
                 "SecurityGroups": [
                     {
-                        "Ref": "PublicAlbSecurityGroup"
+                        "Ref": "PrivateAlbSecurityGroup"
                     }
                 ],
                 "Tags": [
@@ -180,7 +180,7 @@
                             "Fn::Join": [
                                 "",
                                 [
-                                    "Public ALB / ",
+                                    "Private ALB / ",
                                     {
                                         "Ref": "AWS::StackName"
                                     }
@@ -191,7 +191,7 @@
                 ]
             }
         },
-        "PublicAlbTargetGroup": {
+        "PrivateAlbTargetGroup": {
             "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
             "Properties": {
                 "HealthCheckIntervalSeconds": 30,
@@ -206,7 +206,7 @@
                             "Fn::Join": [
                                 "",
                                 [
-                                    "Public ALB / ",
+                                    "Private ALB / ",
                                     {
                                         "Ref": "AWS::StackName"
                                     }
@@ -223,36 +223,36 @@
         }
     },
     "Outputs": {
-        "PublicAlbTargetGroupArn": {
+        "PrivateAlbTargetGroupArn": {
             "Value": {
-                "Ref": "PublicAlbTargetGroup"
+                "Ref": "PrivateAlbTargetGroup"
             }
         },
-        "PublicAlbCanonicalHostedZoneId": {
+        "PrivateAlbCanonicalHostedZoneId": {
             "Value": {
                 "Fn::GetAtt": [
-                    "PublicApplicationLoadBalancer",
+                    "PrivateApplicationLoadBalancer",
                     "CanonicalHostedZoneID"
                 ]
             }
         },
-        "PublicAlbDnsName": {
+        "PrivateAlbDnsName": {
             "Value": {
                 "Fn::GetAtt": [
-                    "PublicApplicationLoadBalancer",
+                    "PrivateApplicationLoadBalancer",
                     "DNSName"
                 ]
             }
         },
-        "PublicAlbFullName": {
+        "PrivateAlbFullName": {
             "Value": {
                 "Fn::GetAtt": [
-                    "PublicApplicationLoadBalancer",
+                    "PrivateApplicationLoadBalancer",
                     "LoadBalancerFullName"
                 ]
             }
         },
-        "PublicAlbHostname": {
+        "PrivateAlbHostname": {
             "Value": {
                 "Fn::If": [
                     "NoSslCertificate",
@@ -263,7 +263,7 @@
                                 "http://",
                                 {
                                     "Fn::GetAtt": [
-                                        "PublicApplicationLoadBalancer",
+                                        "PrivateApplicationLoadBalancer",
                                         "DNSName"
                                     ]
                                 }
@@ -277,7 +277,7 @@
                                 "https://",
                                 {
                                     "Fn::GetAtt": [
-                                        "PublicApplicationLoadBalancer",
+                                        "PrivateApplicationLoadBalancer",
                                         "DNSName"
                                     ]
                                 }
@@ -287,7 +287,7 @@
                 ]
             }
         },
-        "PublicSslCertificate": {
+        "PrivateSslCertificate": {
             "Value": {
                 "Fn::If": [
                     "SslCertificate",
