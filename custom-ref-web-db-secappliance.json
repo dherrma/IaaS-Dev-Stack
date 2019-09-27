@@ -19,9 +19,12 @@
                         "SecInstanceType",
                         "SecAsgMax",
                         "SecAsgMin",
-                        "FWSecurityGroup,
+                        "FWSecurityGroup",
                         "NumberOfSubnets",
-                        "Subnet"
+                        "Subnet",
+                        "PublicAlbTargetGroupArn",
+                        "PublicAlbHostname",
+                        "PublicSslCertificate"
                     ]
                 }
             ],
@@ -32,6 +35,15 @@
                 "NumberOfSubnets": {
                     "default": "Number of subnets"
                 },
+                "PublicAlbTargetGroupArn": {
+                    "default": "Public Alb Target Group Arn"
+                },
+                "PublicAlbHostname": {
+                    "default": "Public Alb Hostname"
+                },
+                "PublicSslCertificate": {
+                    "default": "ACM Cert attached to Public Alb"
+                },                            
                 "Subnet": {
                     "default": "Subnets"
                 },
@@ -65,6 +77,23 @@
             "Description": "Number of subnets. This must match your selections in the list of subnets below.",
             "Type": "String"
         },
+        "PublicAlbTargetGroupArn": {
+            "Description": "The public application load balancer target group arn.",
+            "Type": "String"
+        },
+        "PublicAlbHostname": {
+            "Description": "The hostname of the public ALB http form (e.g. http://abdc-12345-xyz.<region>.elb.amazonaws.com)",
+            "Type": "String"
+        },
+        "PublicSslCertificate": {
+            "AllowedValues": [
+                true,
+                false
+            ],
+            "Default": false,
+            "Description": "Is there an ACM SSL Certificate attached to the Public Alb?",
+            "Type": "String"
+        },                            
         "Subnet": {
             "Description": "Select existing subnets. The number selected must match the number of subnets above. Subnets selected must be in separate AZs.",
             "Type": "List<AWS::EC2::Subnet::Id>"
@@ -176,7 +205,7 @@
                 "p3.16xlarge"
             ],
             "ConstraintDescription": "Must be a valid Amazon EC2 instance type.",
-            "Default": "t2.large",
+            "Default": "t2.micro",
             "Description": "The Amazon EC2 instance type for your web instances.",
             "Type": "String"
         },
@@ -186,6 +215,14 @@
         }
     },
     "Conditions": {
+        "NoSslCertificate": {
+            "Fn::Equals": [
+                false,
+                {
+                    "Ref": "PublicSslCertificate"
+                }
+            ]
+        },                     
         "NumberOfSubnets1": {
             "Fn::Equals": [
                 1,
@@ -218,20 +255,47 @@
     },
     "Mappings": {
         "RegionMap": {
-            "eu-north-1": {
-                "AMI": "ami-18b63d66"
+            "ap-northeast-1": {
+                "AMI": "ami-da9e2cbc"
+            },
+            "ap-northeast-2": {
+                "AMI": "ami-1196317f"
+            },
+            "ap-south-1": {
+                "AMI": "ami-d5c18eba"
+            },
+            "ap-southeast-1": {
+                "AMI": "ami-c63d6aa5"
+            },
+            "ap-southeast-2": {
+                "AMI": "ami-ff4ea59d"
+            },
+            "ca-central-1": {
+                "AMI": "ami-d29e25b6"
             },
             "eu-central-1": {
-                "AMI": "ami-040957a1be86ccb3e"
+                "AMI": "ami-bf2ba8d0"
             },
             "eu-west-1": {
-                "AMI": "ami-012852ea581b7d96d"
+                "AMI": "ami-1a962263"
             },
             "eu-west-2": {
-                "AMI": "ami-0e561192fe493d225"
+                "AMI": "ami-e7d6c983"
             },
-            "eu-west-3": {
-                "AMI": "ami-0e53fb2f442d064a4"
+            "sa-east-1": {
+                "AMI": "ami-286f2a44"
+            },
+            "us-east-1": {
+                "AMI": "ami-55ef662f"
+            },
+            "us-east-2": {
+                "AMI": "ami-15e9c770"
+            },
+            "us-west-1": {
+                "AMI": "ami-a51f27c5"
+            },
+            "us-west-2": {
+                "AMI": "ami-bf4193c7"
             }
         }
     },
@@ -296,7 +360,7 @@
             "Properties": {
                 "Cooldown": 60,
                 "HealthCheckGracePeriod": 120,
-                "HealthCheckType": "EC2",
+                "HealthCheckType": "ELB",
                 "LaunchConfigurationName": {
                     "Ref": "SecLaunchConfiguration"
                 },
@@ -323,6 +387,11 @@
                         "PropagateAtLaunch": true
                     }
                 ],
+                "TargetGroupARNs": [
+                    {
+                        "Ref": "PublicAlbTargetGroupArn"
+                    }
+                ],                     
                 "VPCZoneIdentifier": {
                     "Fn::If": [
                         "NumberOfSubnets1",
@@ -368,6 +437,78 @@
         },
         "SecLaunchConfiguration": {
             "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "configSets": {
+                        "deploy_webserver": [
+                            "install_webserver",
+                            "build_cacheclient",
+                            "install_cacheclient",
+                            "start_webserver"
+                        ]
+                    },
+                    "install_webserver": {
+                        "packages": {
+                            "yum": {
+                                "awslogs": [],
+                                "httpd24": [],
+                                "mysql56": [],
+                                "php70": [],
+                                "php70-devel": [],
+                                "php7-pear": [],
+                                "php70-mysqlnd": []
+                            }
+                        },
+                        "files": {
+                          "/var/www/html/index.html" : {
+                            "content" : { "Fn::Join" : ["\n", [
+                              "<img src=\"https://s3.amazonaws.com/cloudformation-examples/cloudformation_graphic.png\" alt=\"AWS CloudFormation Logo\"/>",
+                              "<h1>Congratulations, you have successfully launched the AWS CloudFormation sample.</h1>"
+                            ]]},
+                            "mode"    : "000644",
+                            "owner"   : "root",
+                            "group"   : "root"
+                          }
+                        }
+                    },
+                    "build_cacheclient": {
+                        "packages": {
+                            "yum": {
+                                "gcc-c++": []
+                            }
+                        },
+                        "files": {
+                            "/tmp/install_cacheclient.sh": {
+                                "content": { "Fn::Join" :["", [
+                                    "#!/bin/bash -xe\nln -s /usr/bin/pecl7 /usr/bin/pecl #just so pecl is available easily\npecl7 install igbinary\nwget -P /tmp/ https://s3.amazonaws.com/aws-refarch/wordpress/latest/bits/AmazonElastiCacheClusterClient-2.0.1-PHP70-64bit.tar.gz\ntar -xf '/tmp/AmazonElastiCacheClusterClient-2.0.1-PHP70-64bit.tar.gz'\ncp '/tmp/artifact/amazon-elasticache-cluster-client.so' /usr/lib64/php/7.0/modules/\nif [ ! -f /etc/php-7.0.d/50-memcached.ini ]; then\n    touch /etc/php-7.0.d/50-memcached.ini\nfi\necho 'extension=igbinary.so;' >> /etc/php-7.0.d/50-memcached.ini\necho 'extension=/usr/lib64/php/7.0/modules/amazon-elasticache-cluster-client.so;' >> /etc/php-7.0.d/50-memcached.ini\n"
+                                ]]},
+                                "mode": 320,
+                                "owner": "root",
+                                "group": "root"
+                            }
+                        }
+                    },
+                    "install_cacheclient": {
+                        "commands": {
+                            "install_cacheclient": {
+                                "command": "./install_cacheclient.sh",
+                                "cwd": "/tmp",
+                                "ignoreErrors": false
+                            }
+                        }
+                    },
+                    "start_webserver": {
+                        "services": {
+                            "sysvinit": {
+                                "httpd": {
+                                    "enabled": true,
+                                    "ensureRunning": true
+                                }
+                            }
+                        }
+                    }
+                }
+            },                         
             "Properties": {
                 "IamInstanceProfile": {
                     "Ref": "SecInstanceProfile"
@@ -395,9 +536,9 @@
                 ],
                 "UserData": {
                     "Fn::Base64": {
-                        "Fn::Sub": "#!/bin/bash -xe\nyum update"
+                        "Fn::Sub": "#!/bin/bash -xe\nyum update -y\n/opt/aws/bin/cfn-init --configsets deploy_webserver --verbose --stack ${AWS::StackName} --resource SecLaunchConfiguration --region ${AWS::Region}\n/opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource SecAutoScalingGroup --region ${AWS::Region}\n"
                     }
-                }
+                }            
             }
         }
     },

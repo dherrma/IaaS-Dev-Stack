@@ -22,8 +22,8 @@
                         "WebSecurityGroup",
                         "NumberOfSubnets",
                         "Subnet",
-                        "PublicAlbTargetGroupArn",
-                        "PublicAlbHostname",
+                        "PrivateAlbTargetGroupArn",
+                        "PrivateAlbHostname",
                         "SslCertificate"
                     ]
                 }
@@ -35,14 +35,14 @@
                 "NumberOfSubnets": {
                     "default": "Number of subnets"
                 },
-                "PublicAlbTargetGroupArn": {
-                    "default": "Public Alb Target Group Arn"
+                "PrivateAlbTargetGroupArn": {
+                    "default": "Private Alb Target Group Arn"
                 },
-                "PublicAlbHostname": {
-                    "default": "Public Alb Hostname"
+                "PrivateAlbHostname": {
+                    "default": "Private Alb Hostname"
                 },
-                "SslCertificate": {
-                    "default": "ACM Cert attached to Public Alb"
+                "PrivateSslCertificate": {
+                    "default": "ACM Cert attached to Private Alb"
                 },
                 "Subnet": {
                     "default": "Subnets"
@@ -78,21 +78,21 @@
             "Description": "Number of subnets. This must match your selections in the list of subnets below.",
             "Type": "String"
         },
-        "PublicAlbTargetGroupArn": {
-            "Description": "The public application load balancer target group arn.",
+        "PrivateAlbTargetGroupArn": {
+            "Description": "The private application load balancer target group arn.",
             "Type": "String"
         },
-        "PublicAlbHostname": {
-            "Description": "The hostname of the public ALB http form (e.g. http://abdc-12345-xyz.<region>.elb.amazonaws.com)",
+        "PrivateAlbHostname": {
+            "Description": "The hostname of the private ALB http form (e.g. http://abdc-12345-xyz.<region>.elb.amazonaws.com)",
             "Type": "String"
         },
-        "SslCertificate": {
+        "PrivateSslCertificate": {
             "AllowedValues": [
                 true,
                 false
             ],
             "Default": false,
-            "Description": "Is there an ACM SSL Certificate attached to the Public Alb?",
+            "Description": "Is there an ACM SSL Certificate attached to the Private Alb?",
             "Type": "String"
         },
         "Subnet": {
@@ -206,7 +206,7 @@
                 "p3.16xlarge"
             ],
             "ConstraintDescription": "Must be a valid Amazon EC2 instance type.",
-            "Default": "t2.large",
+            "Default": "t2.micro",
             "Description": "The Amazon EC2 instance type for your web instances.",
             "Type": "String"
         },
@@ -220,7 +220,7 @@
             "Fn::Equals": [
                 false,
                 {
-                    "Ref": "SslCertificate"
+                    "Ref": "PrivateSslCertificate"
                 }
             ]
         },
@@ -390,7 +390,7 @@
                 ],
                 "TargetGroupARNs": [
                     {
-                        "Ref": "PublicAlbTargetGroupArn"
+                        "Ref": "PrivateAlbTargetGroupArn"
                     }
                 ],
                 "VPCZoneIdentifier": {

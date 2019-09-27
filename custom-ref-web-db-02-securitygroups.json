@@ -50,12 +50,11 @@
                 "GroupDescription": "Security group for Bastion instances",
                 "SecurityGroupIngress": [
                     {
+                        "Description": "Allow SSH to Bastion Host",
                         "IpProtocol": "tcp",
                         "FromPort": 22,
                         "ToPort": 22,
-                        "SourceSecurityGroupId": {
-                            "Ref": "FWSecurityGroup"
-                        }
+                        "CidrIp": "0.0.0.0/0"
                     }
                 ],
                 "VpcId": {
@@ -69,12 +68,21 @@
                 "GroupDescription": "Security group for Security Appliances",
                 "SecurityGroupIngress": [
                     {
+                        "Description": "Allow HTTP Access to FW",
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "SourceSecurityGroupId": {
+                            "Ref": "PublicAlbSecurityGroup"
+                        }
+                    },
+                    {
                         "Description": "Allow HTTPS Access to FW",
                         "IpProtocol": "tcp",
                         "FromPort": 443,
                         "ToPort": 443,
-                        "CidrIp": {
-                            "Ref": "SshAccessCidr"
+                        "SourceSecurityGroupId": {
+                            "Ref": "PublicAlbSecurityGroup"
                         }
                     },
                     {
@@ -82,8 +90,8 @@
                         "IpProtocol": "tcp",
                         "FromPort": 22,
                         "ToPort": 22,
-                        "CidrIp": {
-                            "Ref": "SshAccessCidr"
+                        "SourceSecurityGroupId": {
+                            "Ref": "BastionSecurityGroup"
                         }
                     }
                 ],
@@ -95,7 +103,7 @@
         "PublicAlbSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
-                "GroupDescription": "Security group for ALB",
+                "GroupDescription": "Security group for Public ALB",
                 "SecurityGroupIngress": [
                     {
                         "IpProtocol": "tcp",
@@ -108,6 +116,33 @@
                         "FromPort": 80,
                         "ToPort": 80,
                         "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            }
+        },
+        "PrivateAlbSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Security group for Private ALB",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 443,
+                        "ToPort": 443,
+                        "SourceSecurityGroupId": {
+                            "Ref": "FWSecurityGroup"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "SourceSecurityGroupId": {
+                            "Ref": "FWSecurityGroup"
+                        }
                     }
                 ],
                 "VpcId": {
@@ -125,7 +160,7 @@
                         "FromPort": 80,
                         "ToPort": 80,
                         "SourceSecurityGroupId": {
-                            "Ref": "PublicAlbSecurityGroup"
+                            "Ref": "PrivateAlbSecurityGroup"
                         }
                     },
                     {
@@ -133,7 +168,7 @@
                         "FromPort": 443,
                         "ToPort": 443,
                         "SourceSecurityGroupId": {
-                            "Ref": "PublicAlbSecurityGroup"
+                            "Ref": "PrivateAlbSecurityGroup"
                         }
                     },
                     {
@@ -176,14 +211,19 @@
                 "Ref": "BastionSecurityGroup"
             }
         },
+        "PublicAlbSecurityGroup": {
+            "Value": {
+                "Ref": "PublicAlbSecurityGroup"
+            }
+        },
         "FWSecurityGroup": {
             "Value": {
                 "Ref": "FWSecurityGroup"
             }
         },
-        "PublicAlbSecurityGroup": {
+        "PrivateAlbSecurityGroup": {
             "Value": {
-                "Ref": "PublicAlbSecurityGroup"
+                "Ref": "PrivateAlbSecurityGroup"
             }
         },
         "WebSecurityGroup": {
